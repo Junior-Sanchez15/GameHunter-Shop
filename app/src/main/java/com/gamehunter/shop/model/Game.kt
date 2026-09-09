@@ -4,5 +4,6 @@ data class Game(
     val name: String,
     val platform: String,
     val price: String,
-    val description: String
+    val description: String,
+    val imageResId: Int
 )
