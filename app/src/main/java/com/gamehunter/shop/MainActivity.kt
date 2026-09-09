@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -32,16 +33,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.gamehunter.shop.data.CartManager
 import com.gamehunter.shop.model.Game
 import com.gamehunter.shop.model.gameList
+import com.gamehunter.shop.ui.screens.CartScreen
 import com.gamehunter.shop.ui.screens.GameDetailScreen
 import com.gamehunter.shop.ui.theme.GameHunterShopTheme
-import androidx.compose.ui.draw.clip
-
+import androidx.compose.foundation.layout.statusBarsPadding
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,13 +60,13 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-
                     GameHunterHome()
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun GameHunterHome() {
@@ -82,6 +86,15 @@ fun GameHunterHome() {
         mutableStateOf("Todos")
     }
 
+    // Mostrar carrito
+    var showCart by remember {
+        mutableStateOf(false)
+    }
+
+    var cartMessage by remember {
+        mutableStateOf(false)
+    }
+
     // Categorías disponibles
     val categories = listOf(
         "Todos",
@@ -91,24 +104,31 @@ fun GameHunterHome() {
     )
 
     /*
-     * Si hay un videojuego seleccionado,
-     * mostramos la pantalla de detalle.
+     * Navegación principal:
      *
-     * Si no hay videojuego seleccionado,
-     * mostramos el catálogo.
+     * 1. Si showCart es true → mostramos el carrito.
+     * 2. Si selectedGame tiene un juego → mostramos los detalles.
+     * 3. De lo contrario → mostramos el catálogo.
      */
-    if (selectedGame != null) {
+
+    if (showCart) {
+
+        CartScreen(
+            onBack = {
+                showCart = false
+            }
+        )
+
+    } else if (selectedGame != null) {
 
         GameDetailScreen(
             game = selectedGame!!,
-
             onBack = {
-                // Regresar al catálogo
                 selectedGame = null
             },
-
             onAddToCart = {
-                // El carrito se implementará próximamente.
+                CartManager.addToCart(selectedGame!!)
+                cartMessage = true
             }
         )
 
@@ -116,7 +136,11 @@ fun GameHunterHome() {
 
         Scaffold(
             topBar = {
-                GameHunterTopBar()
+                GameHunterTopBar(
+                    onCartClick = {
+                        showCart = true
+                    }
+                )
             }
         ) { paddingValues ->
 
@@ -141,31 +165,23 @@ fun GameHunterHome() {
                     modifier = Modifier.height(16.dp)
                 )
 
-
                 // Barra de búsqueda
                 OutlinedTextField(
                     value = searchText,
-
                     onValueChange = {
                         searchText = it
                     },
-
                     modifier = Modifier.fillMaxWidth(),
-
                     placeholder = {
                         Text("Buscar videojuego...")
                     },
-
                     singleLine = true,
-
                     shape = RoundedCornerShape(12.dp)
                 )
-
 
                 Spacer(
                     modifier = Modifier.height(24.dp)
                 )
-
 
                 // Categorías
                 Text(
@@ -174,11 +190,9 @@ fun GameHunterHome() {
                     fontWeight = FontWeight.Bold
                 )
 
-
                 Spacer(
                     modifier = Modifier.height(12.dp)
                 )
-
 
                 // Botones de categorías
                 Row(
@@ -187,7 +201,6 @@ fun GameHunterHome() {
                         .horizontalScroll(
                             rememberScrollState()
                         ),
-
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
 
@@ -198,17 +211,14 @@ fun GameHunterHome() {
                                 selectedCategory = category
                             }
                         ) {
-
                             Text(category)
                         }
                     }
                 }
 
-
                 Spacer(
                     modifier = Modifier.height(28.dp)
                 )
-
 
                 // Título del catálogo
                 Text(
@@ -217,11 +227,9 @@ fun GameHunterHome() {
                     fontWeight = FontWeight.Bold
                 )
 
-
                 Spacer(
                     modifier = Modifier.height(12.dp)
                 )
-
 
                 /*
                  * Filtrar los videojuegos:
@@ -229,6 +237,7 @@ fun GameHunterHome() {
                  * 1. Por nombre.
                  * 2. Por plataforma.
                  */
+
                 val filteredGames = gameList.filter { game ->
 
                     val matchesSearch = game.name.contains(
@@ -238,24 +247,23 @@ fun GameHunterHome() {
 
                     val matchesCategory =
                         selectedCategory == "Todos" ||
-                                game.platform.contains(selectedCategory,ignoreCase = true)
+                                game.platform.contains(
+                                    selectedCategory,
+                                    ignoreCase = true
+                                )
 
                     matchesSearch && matchesCategory
                 }
-
 
                 // Mostrar resultados
                 if (filteredGames.isEmpty()) {
 
                     Text(
                         text = "No se encontraron videojuegos.",
-
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(24.dp),
-
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-
+                        textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.bodyLarge
                     )
 
@@ -265,7 +273,6 @@ fun GameHunterHome() {
 
                         GameCard(
                             game = game,
-
                             onDetailsClick = {
                                 // Abrir el detalle del videojuego
                                 selectedGame = game
@@ -282,9 +289,10 @@ fun GameHunterHome() {
     }
 }
 
-
 @Composable
-fun GameHunterTopBar() {
+fun GameHunterTopBar(
+    onCartClick: () -> Unit
+) {
 
     Row(
         modifier = Modifier
@@ -292,35 +300,33 @@ fun GameHunterTopBar() {
             .background(
                 color = MaterialTheme.colorScheme.primary
             )
+            .statusBarsPadding()
             .padding(
                 horizontal = 16.dp,
                 vertical = 14.dp
             ),
-
         verticalAlignment = Alignment.CenterVertically
     ) {
 
         Text(
             text = "🎮 GameHunter Shop",
-
             modifier = Modifier.weight(1f),
-
             color = MaterialTheme.colorScheme.onPrimary,
-
             style = MaterialTheme.typography.titleLarge,
-
             fontWeight = FontWeight.Bold
         )
 
-
-        // Carrito.
-        // Lo haremos funcional más adelante.
+        // Botón del carrito
         Text(
             text = "🛒",
-
             color = MaterialTheme.colorScheme.onPrimary,
-
-            style = MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .clickable {
+                    onCartClick()
+                }
+                .padding(12.dp)
         )
     }
 }
@@ -330,50 +336,69 @@ fun GameCard(
     game: Game,
     onDetailsClick: () -> Unit
 ) {
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         shape = RoundedCornerShape(16.dp)
     ) {
+
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
 
+            // Imagen del videojuego
             Image(
-                painter = painterResource(id = game.imageResId),
+                painter = painterResource(
+                    id = game.imageResId
+                ),
                 contentDescription = game.name,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
-                    .clip(RoundedCornerShape(12.dp)),
+                    .clip(
+                        RoundedCornerShape(12.dp)
+                    ),
                 contentScale = ContentScale.Crop
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
 
+            // Nombre
             Text(
                 text = game.name,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(
+                modifier = Modifier.height(6.dp)
+            )
 
+            // Plataforma
             Text(
                 text = "Plataforma: ${game.platform}",
                 style = MaterialTheme.typography.bodyMedium
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(
+                modifier = Modifier.height(6.dp)
+            )
 
+            // Descripción
             Text(
                 text = game.description,
                 style = MaterialTheme.typography.bodyMedium
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(
+                modifier = Modifier.height(10.dp)
+            )
 
+            // Precio
             Text(
                 text = game.price,
                 style = MaterialTheme.typography.titleLarge,
@@ -381,8 +406,11 @@ fun GameCard(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
 
+            // Botón de detalles
             Button(
                 onClick = onDetailsClick,
                 modifier = Modifier.fillMaxWidth()
