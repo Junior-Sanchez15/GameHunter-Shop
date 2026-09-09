@@ -34,7 +34,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.gamehunter.shop.model.Game
+import com.gamehunter.shop.model.gameList
 import com.gamehunter.shop.ui.theme.GameHunterShopTheme
+
 
 class MainActivity : ComponentActivity() {
 
@@ -45,10 +48,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             GameHunterShopTheme {
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+
                     GameHunterHome()
                 }
             }
@@ -56,35 +61,26 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @Composable
 fun GameHunterHome() {
 
+    // Texto introducido en la barra de búsqueda
     var searchText by remember {
         mutableStateOf("")
     }
 
+    // Categoría seleccionada actualmente
+    var selectedCategory by remember {
+        mutableStateOf("Todos")
+    }
+
+    // Categorías disponibles
     val categories = listOf(
+        "Todos",
         "Nintendo",
         "PlayStation",
         "PC"
-    )
-
-    val games = listOf(
-        Game(
-            name = "The Legend of Zelda",
-            platform = "Nintendo",
-            price = "$59.99"
-        ),
-        Game(
-            name = "EA Sports FC",
-            platform = "PlayStation",
-            price = "$69.99"
-        ),
-        Game(
-            name = "Minecraft",
-            platform = "PC",
-            price = "$29.99"
-        )
     )
 
     Scaffold(
@@ -103,6 +99,7 @@ fun GameHunterHome() {
                 .padding(16.dp)
         ) {
 
+            // Título principal
             Text(
                 text = "Encuentra tus videojuegos favoritos",
                 style = MaterialTheme.typography.headlineSmall,
@@ -113,39 +110,53 @@ fun GameHunterHome() {
                 modifier = Modifier.height(16.dp)
             )
 
+
+            // Barra de búsqueda
             OutlinedTextField(
                 value = searchText,
+
                 onValueChange = {
                     searchText = it
                 },
+
                 modifier = Modifier.fillMaxWidth(),
+
                 placeholder = {
                     Text("Buscar videojuego...")
                 },
+
                 singleLine = true,
+
                 shape = RoundedCornerShape(12.dp)
             )
+
 
             Spacer(
                 modifier = Modifier.height(24.dp)
             )
 
+
+            // Título de categorías
             Text(
                 text = "Categorías",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
 
+
             Spacer(
                 modifier = Modifier.height(12.dp)
             )
 
+
+            // Botones de filtros
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(
                         rememberScrollState()
                     ),
+
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
 
@@ -153,37 +164,76 @@ fun GameHunterHome() {
 
                     Button(
                         onClick = {
-                            // Más adelante implementaremos
-                            // el filtro por plataforma.
+
+                            // Guardamos la categoría seleccionada
+                            selectedCategory = category
                         }
                     ) {
+
                         Text(category)
                     }
                 }
             }
 
+
             Spacer(
                 modifier = Modifier.height(28.dp)
             )
 
+
+            // Título del catálogo
             Text(
                 text = "Videojuegos destacados",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
 
+
             Spacer(
                 modifier = Modifier.height(12.dp)
             )
 
-            games
-                .filter { game ->
-                    game.name.contains(
-                        searchText,
-                        ignoreCase = true
-                    )
-                }
-                .forEach { game ->
+
+            /*
+             * Filtramos los videojuegos utilizando dos condiciones:
+             *
+             * 1. El nombre debe coincidir con la búsqueda.
+             * 2. La plataforma debe coincidir con la categoría seleccionada.
+             *
+             * Si se selecciona "Todos", se muestran todas las plataformas.
+             */
+            val filteredGames = gameList.filter { game ->
+
+                val matchesSearch = game.name.contains(
+                    searchText,
+                    ignoreCase = true
+                )
+
+                val matchesCategory =
+                    selectedCategory == "Todos" ||
+                            game.platform == selectedCategory
+
+                matchesSearch && matchesCategory
+            }
+
+
+            // Mostrar resultados
+            if (filteredGames.isEmpty()) {
+
+                Text(
+                    text = "No se encontraron videojuegos.",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+            } else {
+
+                filteredGames.forEach { game ->
 
                     GameCard(game)
 
@@ -191,9 +241,11 @@ fun GameHunterHome() {
                         modifier = Modifier.height(12.dp)
                     )
                 }
+            }
         }
     }
 }
+
 
 @Composable
 fun GameHunterTopBar() {
@@ -208,31 +260,44 @@ fun GameHunterTopBar() {
                 horizontal = 16.dp,
                 vertical = 14.dp
             ),
+
         verticalAlignment = Alignment.CenterVertically
     ) {
 
         Text(
             text = "🎮 GameHunter Shop",
+
             modifier = Modifier.weight(1f),
+
             color = MaterialTheme.colorScheme.onPrimary,
+
             style = MaterialTheme.typography.titleLarge,
+
             fontWeight = FontWeight.Bold
         )
 
+
+        // Carrito.
+        // Lo haremos funcional más adelante.
         Text(
             text = "🛒",
+
             color = MaterialTheme.colorScheme.onPrimary,
+
             style = MaterialTheme.typography.titleLarge
         )
     }
 }
+
 
 @Composable
 fun GameCard(game: Game) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
+
         shape = RoundedCornerShape(16.dp),
+
         elevation = CardDefaults.cardElevation(
             defaultElevation = 4.dp
         )
@@ -242,20 +307,25 @@ fun GameCard(game: Game) {
             modifier = Modifier.padding(16.dp)
         ) {
 
+            // Espacio reservado para la imagen
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(170.dp)
                     .background(
                         color = MaterialTheme.colorScheme.surfaceVariant,
+
                         shape = RoundedCornerShape(12.dp)
                     ),
+
                 verticalArrangement = Arrangement.Center,
+
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
                 Text(
                     text = "🎮",
+
                     style = MaterialTheme.typography.displayMedium
                 )
 
@@ -268,54 +338,80 @@ fun GameCard(game: Game) {
                 )
             }
 
+
             Spacer(
                 modifier = Modifier.height(12.dp)
             )
 
+
+            // Nombre del videojuego
             Text(
                 text = game.name,
+
                 style = MaterialTheme.typography.titleMedium,
+
                 fontWeight = FontWeight.Bold
             )
+
 
             Spacer(
                 modifier = Modifier.height(4.dp)
             )
 
+
+            // Plataforma
             Text(
                 text = "Plataforma: ${game.platform}",
+
                 style = MaterialTheme.typography.bodyMedium
             )
 
+
             Spacer(
                 modifier = Modifier.height(4.dp)
             )
 
+
+            // Descripción
+            Text(
+                text = game.description,
+
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+
+            Spacer(
+                modifier = Modifier.height(4.dp)
+            )
+
+
+            // Precio
             Text(
                 text = game.price,
+
                 style = MaterialTheme.typography.titleMedium,
+
                 fontWeight = FontWeight.Bold
             )
+
 
             Spacer(
                 modifier = Modifier.height(10.dp)
             )
 
+
+            // Botón para la pantalla de detalle
             Button(
                 onClick = {
-                    // Más adelante abriremos
-                    // la pantalla de detalle.
+                    // La pantalla de detalle
+                    // la implementaremos próximamente.
                 },
+
                 modifier = Modifier.fillMaxWidth()
             ) {
+
                 Text("Ver detalles")
             }
         }
     }
 }
-
-data class Game(
-    val name: String,
-    val platform: String,
-    val price: String
-)
