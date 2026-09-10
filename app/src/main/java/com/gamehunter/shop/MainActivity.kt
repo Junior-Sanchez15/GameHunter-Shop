@@ -26,6 +26,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,16 +43,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.statusBarsPadding
 import com.gamehunter.shop.data.CartManager
+import com.gamehunter.shop.data.NetworkMonitor
+import com.gamehunter.shop.data.OfflineManager
+import com.gamehunter.shop.data.SyncManager
 import com.gamehunter.shop.model.Game
 import com.gamehunter.shop.model.gameList
 import com.gamehunter.shop.ui.screens.CartScreen
 import com.gamehunter.shop.ui.screens.CheckoutScreen
 import com.gamehunter.shop.ui.screens.GameDetailScreen
+import com.gamehunter.shop.ui.screens.NetworkStatusIndicator
 import com.gamehunter.shop.ui.screens.PurchaseSuccessScreen
 import com.gamehunter.shop.ui.theme.GameHunterShopTheme
-import androidx.compose.runtime.collectAsState
-import com.gamehunter.shop.data.NetworkMonitor
-import com.gamehunter.shop.ui.screens.NetworkStatusIndicator
+import kotlinx.coroutines.delay
 
 
 class MainActivity : ComponentActivity() {
@@ -81,10 +85,12 @@ fun GameHunterHome() {
 
     val context = LocalContext.current
 
+    // Monitor de conexión a Internet
     val networkMonitor = remember {
         NetworkMonitor(context)
     }
 
+    // Estado actual de la conexión
     val isOnline by networkMonitor.isOnline.collectAsState()
 
     // Texto introducido en el buscador
@@ -114,8 +120,52 @@ fun GameHunterHome() {
 
     // Mensaje del carrito
     var cartMessage by remember {
-        mutableStateOf(false)
+        mutableStateOf<String?>(null)
     }
+
+    // Mensaje de sincronización
+    var syncMessage by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    // Ocultar automáticamente el mensaje después de 3 segundos
+    LaunchedEffect(cartMessage) {
+
+        if (cartMessage != null) {
+
+            delay(3000)
+
+            cartMessage = null
+        }
+    }
+
+    // Detectar cuando vuelve la conexión a Internet
+    LaunchedEffect(isOnline) {
+
+        if (isOnline) {
+
+            val synchronized =
+                SyncManager.synchronize(context)
+
+            if (synchronized) {
+
+                syncMessage =
+                    "✅ Cambios sincronizados correctamente."
+            }
+        }
+    }
+
+    // Ocultar automáticamente el mensaje de sincronización
+    LaunchedEffect(syncMessage) {
+
+        if (syncMessage != null) {
+
+            delay(3000)
+
+            syncMessage = null
+        }
+    }
+
 
     // Indica si la compra fue completada
     var purchaseCompleted by remember {
@@ -134,6 +184,7 @@ fun GameHunterHome() {
         "PlayStation",
         "PC"
     )
+
 
     /*
      * Navegación principal:
@@ -187,33 +238,89 @@ fun GameHunterHome() {
 
     } else if (selectedGame != null) {
 
-        GameDetailScreen(
-            game = selectedGame!!,
-            onBack = {
-                selectedGame = null
-            },
-            onAddToCart = {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+        ) {
 
-                // Agregar producto y guardar carrito
-                CartManager.addToCart(
-                    selectedGame!!,
-                    context
+            // Mensaje de operación
+            if (cartMessage != null) {
+
+                Text(
+                    text = cartMessage!!,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            if (isOnline) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            }
+                        )
+                        .padding(12.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
                 )
-
-                cartMessage = true
             }
-        )
+
+            GameDetailScreen(
+                game = selectedGame!!,
+
+                onBack = {
+                    selectedGame = null
+                },
+
+                onAddToCart = {
+
+                    val game = selectedGame!!
+
+                    // Agregar el producto al carrito local
+                    CartManager.addToCart(
+                        game,
+                        context
+                    )
+
+                    /*
+                     * Si no hay conexión:
+                     * guardamos la operación pendiente.
+                     */
+                    if (!isOnline) {
+
+                        OfflineManager.savePendingOperation(
+                            context = context,
+                            gameName = game.name,
+                            operation = "ADD"
+                        )
+
+                        // Mostrar mensaje offline
+                        cartMessage =
+                            "🔴 Sin conexión. Producto guardado localmente."
+
+                    } else {
+
+                        // Mostrar mensaje online
+                        cartMessage =
+                            "🟢 Producto agregado correctamente."
+                    }
+                }
+            )
+        }
 
     } else {
 
         Scaffold(
+
             topBar = {
+
                 GameHunterTopBar(
                     onCartClick = {
                         showCart = true
                     }
                 )
             }
+
         ) { paddingValues ->
 
             Column(
@@ -225,13 +332,32 @@ fun GameHunterHome() {
                     )
                     .padding(16.dp)
             ) {
+
+                // Indicador de conexión
                 NetworkStatusIndicator(
                     isOnline = isOnline
                 )
 
+                if (syncMessage != null) {
+
+                    Text(
+                        text = syncMessage!!,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                MaterialTheme.colorScheme.primary
+                            )
+                            .padding(12.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
                 Spacer(
                     modifier = Modifier.height(16.dp)
                 )
+
 
                 // Título principal
                 Text(
@@ -243,6 +369,7 @@ fun GameHunterHome() {
                 Spacer(
                     modifier = Modifier.height(16.dp)
                 )
+
 
                 // Barra de búsqueda
                 OutlinedTextField(
@@ -262,6 +389,7 @@ fun GameHunterHome() {
                     modifier = Modifier.height(24.dp)
                 )
 
+
                 // Categorías
                 Text(
                     text = "Categorías",
@@ -272,6 +400,7 @@ fun GameHunterHome() {
                 Spacer(
                     modifier = Modifier.height(12.dp)
                 )
+
 
                 // Botones de categorías
                 Row(
@@ -290,14 +419,17 @@ fun GameHunterHome() {
                                 selectedCategory = category
                             }
                         ) {
+
                             Text(category)
                         }
                     }
                 }
 
+
                 Spacer(
                     modifier = Modifier.height(28.dp)
                 )
+
 
                 // Título del catálogo
                 Text(
@@ -309,6 +441,7 @@ fun GameHunterHome() {
                 Spacer(
                     modifier = Modifier.height(12.dp)
                 )
+
 
                 /*
                  * Filtrar videojuegos:
@@ -334,6 +467,7 @@ fun GameHunterHome() {
                     matchesSearch && matchesCategory
                 }
 
+
                 // Mostrar resultados
                 if (filteredGames.isEmpty()) {
 
@@ -352,6 +486,7 @@ fun GameHunterHome() {
 
                         GameCard(
                             game = game,
+
                             onDetailsClick = {
 
                                 // Abrir detalles
@@ -386,6 +521,7 @@ fun GameHunterTopBar(
                 horizontal = 16.dp,
                 vertical = 14.dp
             ),
+
         verticalAlignment = Alignment.CenterVertically
     ) {
 
@@ -397,11 +533,13 @@ fun GameHunterTopBar(
             fontWeight = FontWeight.Bold
         )
 
+
         // Botón del carrito
         Text(
             text = "🛒",
             color = MaterialTheme.colorScheme.onPrimary,
             style = MaterialTheme.typography.titleLarge,
+
             modifier = Modifier
                 .clip(
                     RoundedCornerShape(12.dp)
@@ -425,6 +563,7 @@ fun GameCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
+
         shape = RoundedCornerShape(16.dp)
     ) {
 
@@ -437,19 +576,24 @@ fun GameCard(
                 painter = painterResource(
                     id = game.imageResId
                 ),
+
                 contentDescription = game.name,
+
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
                     .clip(
                         RoundedCornerShape(12.dp)
                     ),
+
                 contentScale = ContentScale.Crop
             )
+
 
             Spacer(
                 modifier = Modifier.height(12.dp)
             )
+
 
             // Nombre
             Text(
@@ -458,9 +602,11 @@ fun GameCard(
                 fontWeight = FontWeight.Bold
             )
 
+
             Spacer(
                 modifier = Modifier.height(6.dp)
             )
+
 
             // Plataforma
             Text(
@@ -468,9 +614,11 @@ fun GameCard(
                 style = MaterialTheme.typography.bodyMedium
             )
 
+
             Spacer(
                 modifier = Modifier.height(6.dp)
             )
+
 
             // Descripción
             Text(
@@ -478,9 +626,11 @@ fun GameCard(
                 style = MaterialTheme.typography.bodyMedium
             )
 
+
             Spacer(
                 modifier = Modifier.height(10.dp)
             )
+
 
             // Precio
             Text(
@@ -490,15 +640,18 @@ fun GameCard(
                 color = MaterialTheme.colorScheme.primary
             )
 
+
             Spacer(
                 modifier = Modifier.height(12.dp)
             )
+
 
             // Botón de detalles
             Button(
                 onClick = onDetailsClick,
                 modifier = Modifier.fillMaxWidth()
             ) {
+
                 Text("Ver detalles")
             }
         }
