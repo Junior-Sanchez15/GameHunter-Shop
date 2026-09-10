@@ -48,6 +48,9 @@ import com.gamehunter.shop.ui.screens.CheckoutScreen
 import com.gamehunter.shop.ui.screens.GameDetailScreen
 import com.gamehunter.shop.ui.screens.PurchaseSuccessScreen
 import com.gamehunter.shop.ui.theme.GameHunterShopTheme
+import androidx.compose.runtime.collectAsState
+import com.gamehunter.shop.data.NetworkMonitor
+import com.gamehunter.shop.ui.screens.NetworkStatusIndicator
 
 
 class MainActivity : ComponentActivity() {
@@ -77,6 +80,12 @@ class MainActivity : ComponentActivity() {
 fun GameHunterHome() {
 
     val context = LocalContext.current
+
+    val networkMonitor = remember {
+        NetworkMonitor(context)
+    }
+
+    val isOnline by networkMonitor.isOnline.collectAsState()
 
     // Texto introducido en el buscador
     var searchText by remember {
@@ -216,6 +225,13 @@ fun GameHunterHome() {
                     )
                     .padding(16.dp)
             ) {
+                NetworkStatusIndicator(
+                    isOnline = isOnline
+                )
+
+                Spacer(
+                    modifier = Modifier.height(16.dp)
+                )
 
                 // Título principal
                 Text(
