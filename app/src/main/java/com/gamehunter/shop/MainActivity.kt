@@ -182,6 +182,7 @@ fun GameHunterHome() {
         "Todos",
         "Nintendo",
         "PlayStation",
+        "Xbox",
         "PC"
     )
 
