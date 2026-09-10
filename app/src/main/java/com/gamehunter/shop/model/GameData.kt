@@ -62,7 +62,7 @@ val gameList = listOf(
 
     Game(
         name = "Forza Horizon 5",
-        platform = "Xbox, PC",
+        platform = "Xbox, PC, PlayStation",
         price = "$59.99",
         description = "Carreras en mundo abierto por los paisajes de México.",
         imageResId = R.drawable.forza_horizon_5
