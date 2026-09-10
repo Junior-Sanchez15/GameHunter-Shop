@@ -38,7 +38,7 @@ val gameList = listOf(
 
     Game(
         name = "Minecraft",
-        platform = "PC, Nintendo, PlayStation",
+        platform = "PC, Nintendo, PlayStation, Xbox",
         price = "$29.99",
         description = "Juego de construcción, exploración y supervivencia.",
         imageResId = R.drawable.minecraft
@@ -46,9 +46,41 @@ val gameList = listOf(
 
     Game(
         name = "Cyberpunk 2077",
-        platform = "PC, Nintendo, PlayStation",
+        platform = "PC, Nintendo, PlayStation, Xbox",
         price = "$59.99",
         description = "Juego de rol y acción ambientado en Night City.",
         imageResId = R.drawable.cyberpunk
+    ),
+
+    Game(
+        name = "Halo Infinite",
+        platform = "Xbox, PC",
+        price = "$39.99",
+        description = "Disparos en primera persona con el Jefe Maestro.",
+        imageResId = R.drawable.halo_infinite
+    ),
+
+    Game(
+        name = "Forza Horizon 5",
+        platform = "Xbox, PC",
+        price = "$59.99",
+        description = "Carreras en mundo abierto por los paisajes de México.",
+        imageResId = R.drawable.forza_horizon_5
+    ),
+
+    Game(
+        name = "Gears 5",
+        platform = "Xbox, PC",
+        price = "$29.99",
+        description = "Acción y disparos en tercera persona contra el Enjambre.",
+        imageResId = R.drawable.gears_5
+    ),
+
+    Game(
+        name = "Starfield",
+        platform = "Xbox, PC",
+        price = "$69.99",
+        description = "Rol y exploración espacial en cientos de planetas.",
+        imageResId = R.drawable.starfield
     )
 )
