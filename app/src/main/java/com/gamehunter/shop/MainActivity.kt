@@ -46,6 +46,8 @@ import com.gamehunter.shop.ui.screens.CartScreen
 import com.gamehunter.shop.ui.screens.GameDetailScreen
 import com.gamehunter.shop.ui.theme.GameHunterShopTheme
 import androidx.compose.foundation.layout.statusBarsPadding
+import com.gamehunter.shop.ui.screens.CheckoutScreen
+import com.gamehunter.shop.ui.screens.PurchaseSuccessScreen
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,8 +93,18 @@ fun GameHunterHome() {
         mutableStateOf(false)
     }
 
+    var showCheckout by remember { mutableStateOf(false) }
+
     var cartMessage by remember {
         mutableStateOf(false)
+    }
+
+    var purchaseCompleted by remember {
+        mutableStateOf(false)
+    }
+
+    var purchaseTotal by remember {
+        mutableStateOf(0.0)
     }
 
     // Categorías disponibles
@@ -111,11 +123,41 @@ fun GameHunterHome() {
      * 3. De lo contrario → mostramos el catálogo.
      */
 
-    if (showCart) {
+    if (purchaseCompleted) {
+
+        PurchaseSuccessScreen(
+            total = purchaseTotal,
+            onBackToCatalog = {
+                purchaseCompleted = false
+            }
+        )
+
+    } else if (showCheckout) {
+
+        CheckoutScreen(
+            onBack = {
+                showCheckout = false
+            },
+            onPurchaseComplete = {
+
+                purchaseTotal = CartManager.getTotal()
+
+                CartManager.clearCart()
+
+                showCheckout = false
+                showCart = false
+                purchaseCompleted = true
+            }
+        )
+
+    } else if (showCart) {
 
         CartScreen(
             onBack = {
                 showCart = false
+            },
+            onCheckout = {
+                showCheckout = true
             }
         )
 

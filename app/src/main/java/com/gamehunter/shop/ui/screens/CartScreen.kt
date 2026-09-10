@@ -30,7 +30,8 @@ import androidx.compose.foundation.verticalScroll
 
 @Composable
 fun CartScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onCheckout: () -> Unit
 ) {
 
     BackHandler {
@@ -206,9 +207,7 @@ fun CartScreen(
 
             // Comprar
             Button(
-                onClick = {
-                    // Próximamente: proceso de compra
-                },
+                onClick = onCheckout,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Comprar")
