@@ -1,5 +1,6 @@
 package com.gamehunter.shop.ui.screens
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,6 +33,8 @@ fun CheckoutScreen(
     onBack: () -> Unit,
     onPurchaseComplete: () -> Unit
 ) {
+
+    val context = LocalContext.current
 
     BackHandler {
         onBack()
@@ -46,12 +50,14 @@ fun CheckoutScreen(
         ) {
 
             Button(
-                onClick = onBack,
+                onClick = onBack
             ) {
                 Text("← Volver al carrito")
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(
+                modifier = Modifier.height(20.dp)
+            )
 
             Text(
                 text = "🛒 Finalizar compra",
@@ -59,7 +65,9 @@ fun CheckoutScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(
+                modifier = Modifier.height(20.dp)
+            )
 
             Text(
                 text = "Resumen del pedido",
@@ -67,7 +75,9 @@ fun CheckoutScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
 
             CartManager.cartItems.forEach { item ->
 
@@ -156,7 +166,10 @@ fun CheckoutScreen(
 
             Button(
                 onClick = {
+
+                    // Notificar que la compra terminó
                     onPurchaseComplete()
+
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

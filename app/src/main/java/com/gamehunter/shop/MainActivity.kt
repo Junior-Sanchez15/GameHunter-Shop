@@ -3,9 +3,9 @@ package com.gamehunter.shop
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.clickable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -35,25 +34,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.statusBarsPadding
 import com.gamehunter.shop.data.CartManager
 import com.gamehunter.shop.model.Game
 import com.gamehunter.shop.model.gameList
 import com.gamehunter.shop.ui.screens.CartScreen
-import com.gamehunter.shop.ui.screens.GameDetailScreen
-import com.gamehunter.shop.ui.theme.GameHunterShopTheme
-import androidx.compose.foundation.layout.statusBarsPadding
 import com.gamehunter.shop.ui.screens.CheckoutScreen
+import com.gamehunter.shop.ui.screens.GameDetailScreen
 import com.gamehunter.shop.ui.screens.PurchaseSuccessScreen
+import com.gamehunter.shop.ui.theme.GameHunterShopTheme
+
+
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        enableEdgeToEdge()
+        // Inicializar y recuperar el carrito guardado
+        CartManager.initialize(this)
 
         setContent {
             GameHunterShopTheme {
@@ -72,6 +75,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun GameHunterHome() {
+
+    val context = LocalContext.current
 
     // Texto introducido en el buscador
     var searchText by remember {
@@ -93,16 +98,22 @@ fun GameHunterHome() {
         mutableStateOf(false)
     }
 
-    var showCheckout by remember { mutableStateOf(false) }
+    // Mostrar pantalla de checkout
+    var showCheckout by remember {
+        mutableStateOf(false)
+    }
 
+    // Mensaje del carrito
     var cartMessage by remember {
         mutableStateOf(false)
     }
 
+    // Indica si la compra fue completada
     var purchaseCompleted by remember {
         mutableStateOf(false)
     }
 
+    // Total de la compra realizada
     var purchaseTotal by remember {
         mutableStateOf(0.0)
     }
@@ -118,9 +129,11 @@ fun GameHunterHome() {
     /*
      * Navegación principal:
      *
-     * 1. Si showCart es true → mostramos el carrito.
-     * 2. Si selectedGame tiene un juego → mostramos los detalles.
-     * 3. De lo contrario → mostramos el catálogo.
+     * 1. Compra completada
+     * 2. Checkout
+     * 3. Carrito
+     * 4. Detalles
+     * 5. Catálogo
      */
 
     if (purchaseCompleted) {
@@ -140,9 +153,11 @@ fun GameHunterHome() {
             },
             onPurchaseComplete = {
 
+                // Guardamos el total antes de vaciar el carrito
                 purchaseTotal = CartManager.getTotal()
 
-                CartManager.clearCart()
+                // Vaciar carrito y guardar el cambio
+                CartManager.clearCart(context)
 
                 showCheckout = false
                 showCart = false
@@ -169,7 +184,13 @@ fun GameHunterHome() {
                 selectedGame = null
             },
             onAddToCart = {
-                CartManager.addToCart(selectedGame!!)
+
+                // Agregar producto y guardar carrito
+                CartManager.addToCart(
+                    selectedGame!!,
+                    context
+                )
+
                 cartMessage = true
             }
         )
@@ -274,7 +295,7 @@ fun GameHunterHome() {
                 )
 
                 /*
-                 * Filtrar los videojuegos:
+                 * Filtrar videojuegos:
                  *
                  * 1. Por nombre.
                  * 2. Por plataforma.
@@ -316,7 +337,8 @@ fun GameHunterHome() {
                         GameCard(
                             game = game,
                             onDetailsClick = {
-                                // Abrir el detalle del videojuego
+
+                                // Abrir detalles
                                 selectedGame = game
                             }
                         )
@@ -330,6 +352,7 @@ fun GameHunterHome() {
         }
     }
 }
+
 
 @Composable
 fun GameHunterTopBar(
@@ -364,7 +387,9 @@ fun GameHunterTopBar(
             color = MaterialTheme.colorScheme.onPrimary,
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
+                .clip(
+                    RoundedCornerShape(12.dp)
+                )
                 .clickable {
                     onCartClick()
                 }
@@ -372,6 +397,7 @@ fun GameHunterTopBar(
         )
     }
 }
+
 
 @Composable
 fun GameCard(

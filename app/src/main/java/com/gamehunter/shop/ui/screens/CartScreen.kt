@@ -1,5 +1,6 @@
 package com.gamehunter.shop.ui.screens
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -9,8 +10,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -20,19 +21,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.gamehunter.shop.data.CartManager
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import com.gamehunter.shop.data.CartManager
 
 @Composable
 fun CartScreen(
     onBack: () -> Unit,
     onCheckout: () -> Unit
 ) {
+
+    val context = LocalContext.current
 
     BackHandler {
         onBack()
@@ -48,7 +52,7 @@ fun CartScreen(
 
         // Botón para regresar
         Button(
-            onClick = onBack,
+            onClick = onBack
         ) {
             Text("← Volver al catálogo")
         }
@@ -118,7 +122,7 @@ fun CartScreen(
                             modifier = Modifier.size(12.dp)
                         )
 
-                        // Información
+                        // Información del videojuego
                         Column(
                             modifier = Modifier.weight(1f)
                         ) {
@@ -164,20 +168,24 @@ fun CartScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
 
+                                // Disminuir cantidad
                                 Button(
                                     onClick = {
                                         CartManager.removeFromCart(
-                                            item.game
+                                            item.game,
+                                            context
                                         )
                                     }
                                 ) {
                                     Text("−")
                                 }
 
+                                // Aumentar cantidad
                                 Button(
                                     onClick = {
                                         CartManager.addToCart(
-                                            item.game
+                                            item.game,
+                                            context
                                         )
                                     }
                                 ) {
