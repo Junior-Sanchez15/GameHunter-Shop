@@ -6,9 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -182,6 +184,7 @@ fun GameHunterHome() {
         "Todos",
         "Nintendo",
         "PlayStation",
+        "Xbox",
         "PC"
     )
 
@@ -402,26 +405,60 @@ fun GameHunterHome() {
                 )
 
 
-                // Botones de categorías
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(
-                            rememberScrollState()
-                        ),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                /*
+                 * Botones de categorías.
+                 *
+                 * Se acomodan solos en varios renglones: con cinco categorías
+                 * ya no caben en una sola fila, y una fila que se desliza
+                 * esconde las últimas.
+                 */
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
 
                     categories.forEach { category ->
 
-                        Button(
+                        val seleccionada = selectedCategory == category
+
+                        /*
+                         * La palomita solo existe en la categoría escogida.
+                         * Si fuera un hueco vacío, el chip le reservaría el
+                         * espacio igual y todos quedarían descuadrados.
+                         */
+                        val palomita: (@Composable () -> Unit)? =
+                            if (seleccionada) {
+                                { Text("✓") }
+                            } else {
+                                null
+                            }
+
+                        FilterChip(
+                            selected = seleccionada,
+
                             onClick = {
                                 selectedCategory = category
-                            }
-                        ) {
+                            },
 
-                            Text(category)
-                        }
+                            label = {
+                                Text(category)
+                            },
+
+                            leadingIcon = palomita,
+
+                            /*
+                             * El tema define el rojo y el blanco, pero deja los
+                             * demás papeles de Material en el morado de fábrica.
+                             * Por eso los colores del chip escogido van a mano:
+                             * sin esto, saldría morado.
+                             */
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        )
                     }
                 }
 
